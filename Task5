@@ -1,162 +1,127 @@
 import tkinter as tk
 from tkinter import messagebox
+import sqlite3
 
-# List of 10 questions with options and correct answers
-questions = [
-    {
-        "question": "Which of the following schemes has the purpose of a garbage-free city?",
-        "options": [
-            "Swachh Bharat Mission - rural phase 2",
-            "Swachh Bharat Mission - urban phase 2",
-            "Swachh Bharat Mission - urban phase 1",
-            "Swachh Bharat Mission - rural"
-        ],
-        "answer": 1
-    },
-    {
-        "question": "What does CPU stand for?",
-        "options": [
-            "Central Process Unit",
-            "Central Processing Unit",
-            "Computer Personal Unit",
-            "Central Processor Utility"
-        ],
-        "answer": 1
-    },
-    {
-        "question": "Which language is used to create web pages?",
-        "options": [
-            "Python",
-            "C++",
-            "HTML",
-            "Java"
-        ],
-        "answer": 2
-    },
-    {
-        "question": "What is the brain of the computer?",
-        "options": [
-            "RAM",
-            "Monitor",
-            "CPU",
-            "Hard Disk"
-        ],
-        "answer": 2
-    },
-    {
-        "question": "Which device is used to point and click?",
-        "options": [
-            "Monitor",
-            "Keyboard",
-            "Mouse",
-            "Printer"
-        ],
-        "answer": 2
-    },
-    {
-        "question": "What type of file is a .py file?",
-        "options": [
-            "Python File",
-            "PowerPoint File",
-            "Paint File",
-            "None"
-        ],
-        "answer": 0
-    },
-    {
-        "question": "What does GUI stand for?",
-        "options": [
-            "Graphic User Interface",
-            "Graphical User Interface",
-            "General User Interface",
-            "Graphical Utility Interface"
-        ],
-        "answer": 1
-    },
-    {
-        "question": "What does RAM stand for?",
-        "options": [
-            "Random Access Memory",
-            "Read Access Memory",
-            "Run Access Memory",
-            "Real-time Access Memory"
-        ],
-        "answer": 0
-    },
-    {
-        "question": "Which one is a search engine?",
-        "options": [
-            "Windows",
-            "Google",
-            "Instagram",
-            "YouTube"
-        ],
-        "answer": 1
-    },
-    {
-        "question": "What does URL stand for?",
-        "options": [
-            "Uniform Resource Locator",
-            "Uniform Read Link",
-            "Unified Resource Link",
-            "Universal Resource Locator"
-        ],
-        "answer": 0
-    },
-]
+# ---------- DATABASE SETUP ----------
+conn = sqlite3.connect("contacts.db")
+cur = conn.cursor()
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS contacts (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        email TEXT,
+        address TEXT
+    )
+""")
+conn.commit()
 
-class QuizApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("AKTHIRU TECH QUIZ")
-        self.root.geometry("900x400")
-        self.root.config(bg="#2a2a2a")
+# ---------- FUNCTIONALITY ----------
+def add_contact():
+    name = name_entry.get().strip()
+    phone = phone_entry.get().strip()
+    email = email_entry.get().strip()
+    address = address_entry.get().strip()
 
-        self.qn = 0
-        self.correct = 0
-        self.selected_option = tk.IntVar()
+    if name and phone:
+        cur.execute("INSERT INTO contacts (name, phone, email, address) VALUES (?, ?, ?, ?)",
+                    (name, phone, email, address))
+        conn.commit()
+        messagebox.showinfo("Success", "Contact added.")
+        view_contacts()
+        clear_entries()
+    else:
+        messagebox.showerror("Error", "Name and phone are required.")
 
-        self.create_widgets()
-        self.display_question()
+def view_contacts():
+    contact_list.delete(0, tk.END)
+    cur.execute("SELECT * FROM contacts ORDER BY name")
+    for row in cur.fetchall():
+        contact_list.insert(tk.END, f"{row[1]} | {row[2]} | {row[3]} | {row[4]}")
 
-    def create_widgets(self):
-        self.title = tk.Label(self.root, text=": AKTHIRU TECH QUIZ :", font=("Arial", 20, "bold"), bg="#ff5733", fg="white")
-        self.title.pack(fill=tk.X)
+def delete_contact():
+    selected = contact_list.curselection()
+    if selected:
+        contact = contact_list.get(selected[0])
+        name = contact.split("|")[0].strip()
+        cur.execute("DELETE FROM contacts WHERE name=?", (name,))
+        conn.commit()
+        messagebox.showinfo("Deleted", f"{name} removed.")
+        view_contacts()
+    else:
+        messagebox.showwarning("Warning", "Select a contact to delete.")
 
-        self.quit_btn = tk.Button(self.root, text="Quit", font=("Arial", 12), bg="#ff4d4d", fg="white", command=self.root.quit)
-        self.quit_btn.place(x=800, y=10)
+def search_contact():
+    query = name_entry.get().strip()
+    contact_list.delete(0, tk.END)
+    
+    if not query:
+        messagebox.showwarning("Warning", "Enter a name to search.")
+        return
 
-        self.question_label = tk.Label(self.root, text="", font=("Arial", 14, "bold"), bg="#333333", fg="white", anchor="w", justify="left")
-        self.question_label.place(x=50, y=80, width=800)
+    cur.execute("SELECT * FROM contacts WHERE name LIKE ?", ('%' + query + '%',))
+    results = cur.fetchall()
+    
+    if results:
+        for row in results:
+            contact_list.insert(tk.END, f"{row[1]} | {row[2]} | {row[3]} | {row[4]}")
+    else:
+        messagebox.showinfo("Not Found", "No contact found with that name.")
 
-        self.radio_buttons = []
-        for i in range(4):
-            rb = tk.Radiobutton(self.root, text="", font=("Arial", 12), variable=self.selected_option,
-                                value=i, bg="#555555", fg="white", anchor='w', justify="left", width=60)
-            rb.place(x=70, y=120 + i * 40)
-            self.radio_buttons.append(rb)
+def clear_entries():
+    name_entry.delete(0, tk.END)
+    phone_entry.delete(0, tk.END)
+    email_entry.delete(0, tk.END)
+    address_entry.delete(0, tk.END)
 
-        self.next_button = tk.Button(self.root, text="Next", font=("Arial", 12, "bold"), bg="#0066cc", fg="white", command=self.next_question)
-        self.next_button.place(x=400, y=300)
+# ---------- GUI SETUP ----------
+root = tk.Tk()
+root.title("Real Contact Book")
+root.geometry("600x500")
+root.configure(bg="#1e272e")
 
-    def display_question(self):
-        self.selected_option.set(-1)
-        q = questions[self.qn]
-        self.question_label.config(text=f"Q{self.qn + 1}. {q['question']}")
-        for i, option in enumerate(q['options']):
-            self.radio_buttons[i].config(text=option)
+# Labels and Entries
+form_frame = tk.Frame(root, bg="#1e272e")
+form_frame.pack(pady=10)
 
-    def next_question(self):
-        if self.selected_option.get() == questions[self.qn]["answer"]:
-            self.correct += 1
-        self.qn += 1
-        if self.qn == len(questions):
-            messagebox.showinfo("Result", f"Your Score: {self.correct}/{len(questions)}")
-            self.root.quit()
-        else:
-            self.display_question()
+tk.Label(form_frame, text="Name:", fg="white", bg="#1e272e").grid(row=0, column=0, sticky="e")
+tk.Label(form_frame, text="Phone:", fg="white", bg="#1e272e").grid(row=1, column=0, sticky="e")
+tk.Label(form_frame, text="Email:", fg="white", bg="#1e272e").grid(row=2, column=0, sticky="e")
+tk.Label(form_frame, text="Address:", fg="white", bg="#1e272e").grid(row=3, column=0, sticky="e")
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = QuizApp(root)
-    root.mainloop()
+name_entry = tk.Entry(form_frame, width=40)
+phone_entry = tk.Entry(form_frame, width=40)
+email_entry = tk.Entry(form_frame, width=40)
+address_entry = tk.Entry(form_frame, width=40)
+
+name_entry.grid(row=0, column=1, pady=2)
+phone_entry.grid(row=1, column=1, pady=2)
+email_entry.grid(row=2, column=1, pady=2)
+address_entry.grid(row=3, column=1, pady=2)
+
+# Buttons
+btn_frame = tk.Frame(root, bg="#1e272e")
+btn_frame.pack(pady=10)
+
+tk.Button(btn_frame, text="Add", width=10, command=add_contact).grid(row=0, column=0, padx=5)
+tk.Button(btn_frame, text="Search", width=10, command=search_contact).grid(row=0, column=1, padx=5)
+tk.Button(btn_frame, text="Delete", width=10, command=delete_contact).grid(row=0, column=2, padx=5)
+tk.Button(btn_frame, text="View All", width=10, command=view_contacts).grid(row=0, column=3, padx=5)
+
+# Contact List with Scrollbar
+list_frame = tk.Frame(root)
+list_frame.pack(pady=10)
+
+scrollbar = tk.Scrollbar(list_frame)
+contact_list = tk.Listbox(list_frame, width=80, height=15, yscrollcommand=scrollbar.set)
+scrollbar.config(command=contact_list.yview)
+
+contact_list.pack(side="left", fill="both")
+scrollbar.pack(side="right", fill="y")
+
+tk.Label(root, text="AKTHIRU", font=("Arial", 8), fg="skyblue", bg="#1e272e").pack(side="bottom", pady=5)
+
+# Run initial view
+view_contacts()
+
+root.mainloop()
