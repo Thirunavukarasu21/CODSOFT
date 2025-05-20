@@ -1,0 +1,141 @@
+import tkinter as tk
+import os
+
+# File to store tasks
+TASKS_FILE = "tasks.txt"
+
+# Load tasks from file
+def load_tasks():
+    if os.path.exists(TASKS_FILE):
+        with open(TASKS_FILE, "r") as file:
+            for task in file:
+                task_list.append(task.strip())
+        refresh_task_listbox()
+
+# Save tasks to file
+def save_tasks():
+    with open(TASKS_FILE, "w") as file:
+        for task in task_list:
+            file.write(task + "\n")
+
+# Refresh the listbox display
+def refresh_task_listbox():
+    task_listbox.delete(0, tk.END)
+    for idx, task in enumerate(task_list, start=1):
+        task_listbox.insert(tk.END, f"{idx}) {task}")
+
+# Add a new task
+def add_task():
+    task = task_entry.get().strip()
+    if task:
+        task_list.append(task)
+        refresh_task_listbox()
+        save_tasks()
+        task_entry.delete(0, tk.END)
+        status_label.config(text="✅ Task added.", fg="green")
+    else:
+        status_label.config(text="⚠ Please enter a task.", fg="red")
+
+# Remove selected task or by number/name
+def remove_task():
+    if not task_list:
+        status_label.config(text="⚠ No tasks to remove.", fg="red")
+        return
+
+    selected = task_listbox.curselection()
+    task_input = task_entry.get().strip()
+
+    if selected:
+        index = selected[0]
+        task_list.pop(index)
+        refresh_task_listbox()
+        save_tasks()
+        status_label.config(text="✅ Selected task removed.", fg="green")
+
+    elif task_input:
+        if task_input.isdigit():
+            index = int(task_input) - 1
+            if 0 <= index < len(task_list):
+                task_list.pop(index)
+                refresh_task_listbox()
+                save_tasks()
+                status_label.config(text="✅ Task removed by number.", fg="green")
+            else:
+                status_label.config(text="⚠ Invalid task number.", fg="red")
+        elif task_input in task_list:
+            task_list.remove(task_input)
+            refresh_task_listbox()
+            save_tasks()
+            status_label.config(text="✅ Task removed by name.", fg="green")
+        else:
+            status_label.config(text="⚠ Task not found.", fg="red")
+    else:
+        status_label.config(text="⚠ Select a task or enter task number/name.", fg="red")
+
+    task_entry.delete(0, tk.END)
+
+# Delete all tasks
+def delete_all_tasks():
+    if task_list:
+        task_list.clear()
+        refresh_task_listbox()
+        save_tasks()
+        status_label.config(text="✅ All tasks deleted.", fg="green")
+    else:
+        status_label.config(text="⚠ No tasks to delete.", fg="red")
+
+# Close the app
+def exit_app():
+    root.destroy()
+
+# ------------------- UI Setup ------------------- #
+
+root = tk.Tk()
+root.title("Numbered To-Do List")
+root.geometry("500x600")
+root.configure(bg="white")
+
+task_list = []
+
+# Title
+title_label = tk.Label(root, text="To-Do List", font=("Segoe UI", 24, "bold"), bg="#1976d2", fg="white")
+title_label.pack(pady=(20, 10), fill=tk.X)
+
+# Task entry label
+task_title_label = tk.Label(root, text="Enter the Task Title or Number:", font=("Segoe UI", 14), bg="white", fg="#0d47a1")
+task_title_label.pack()
+
+# Entry field
+task_entry = tk.Entry(root, font=("Segoe UI", 14), width=35, borderwidth=2, relief="solid")
+task_entry.pack(pady=(5, 10))
+
+# Buttons
+button_frame = tk.Frame(root, bg="white")
+button_frame.pack(pady=10)
+
+add_button = tk.Button(button_frame, text="Add Task", width=12, bg="#2196f3", font=("Segoe UI", 12), fg="white", relief="flat", command=add_task)
+add_button.grid(row=0, column=0, padx=5)
+
+remove_button = tk.Button(button_frame, text="Remove Task", width=12, bg="#e53935", font=("Segoe UI", 12), fg="white", relief="flat", command=remove_task)
+remove_button.grid(row=0, column=1, padx=5)
+
+delete_all_button = tk.Button(button_frame, text="Delete All", width=12, bg="#fb8c00", font=("Segoe UI", 12), fg="white", relief="flat", command=delete_all_tasks)
+delete_all_button.grid(row=0, column=2, padx=5)
+
+# Task listbox
+task_listbox = tk.Listbox(root, font=("Segoe UI", 14), width=45, height=10, bg="white", fg="#0d47a1", selectbackground="#bbdefb", selectmode=tk.SINGLE, bd=1, highlightthickness=1)
+task_listbox.pack(pady=10)
+
+# Status message
+status_label = tk.Label(root, text="", font=("Segoe UI", 12), bg="white", fg="green")
+status_label.pack(pady=5)
+
+# Exit button
+exit_button = tk.Button(root, text="Exit / Close", width=20, bg="#546e7a", font=("Segoe UI", 14), fg="white", relief="flat", command=exit_app)
+exit_button.pack(pady=20)
+
+# Load existing tasks
+load_tasks()
+
+# Start the app
+root.mainloop()
