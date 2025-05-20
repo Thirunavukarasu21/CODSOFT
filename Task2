@@ -1,0 +1,128 @@
+import tkinter as tk
+import math
+
+class ScientificCalculator:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Scientific Calculator")
+        self.root.configure(bg="light blue")  # Background color for the window
+        self.expression = ""
+
+        self.input_text = tk.StringVar()
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Frame for the input field
+        input_frame = tk.Frame(self.root, width=400, height=50, bd=0, bg="light blue")  # Light blue background for input frame
+        input_frame.pack(side="top")
+
+        # Input field with white background
+        input_field = tk.Entry(input_frame, font=('arial', 18, 'bold'), textvariable=self.input_text,
+                               width=50, bg="white", bd=5, justify="right")
+        input_field.grid(row=0, column=0)
+        input_field.pack(ipady=10)
+
+        # Frame for buttons
+        btns_frame = tk.Frame(self.root, bg="light blue")  # Light blue background for button frame
+        btns_frame.pack()
+
+        # Button layout
+        buttons = [
+            ['CE', '√', 'π', 'e', 'Deg', 'x²'],
+            ['7', '8', '9', '.', 'Exp', 'x!'],
+            ['4', '5', '6', '*', 'Rad', 'x^'],
+            ['1', '2', '3', '/', 'sin', 'cos'],
+            ['0', '.', '-', '+', 'tan', '10^'],
+            ['sinh', 'cosh', 'tanh', '1/x', 'ln', 'log2'],
+            ['log10', 'Abs', '=', '', '', '']
+        ]
+
+        # Button colors for different groups
+        btn_colors = {
+            'numeric': "light grey",  # For numbers and decimal points
+            'operator': "light blue",  # For operators and functions
+            'clear': "red",  # For 'CE'
+            'equals': "green",  # For '='
+            'scientific': "light pink"  # For scientific functions
+        }
+
+        # Mapping for commands
+        cmd_map = {
+            'π': lambda: self.append_text(str(math.pi)),
+            'e': lambda: self.append_text(str(math.e)),
+            'Deg': lambda: self.append_text(str(math.degrees(float(self.expression)))),
+            'Rad': lambda: self.append_text(str(math.radians(float(self.expression)))),
+            '√': lambda: self.evaluate_func(math.sqrt),
+            'x²': lambda: self.evaluate_func(lambda x: x ** 2),
+            'x^': lambda: self.append_text(""),
+            'x!': lambda: self.evaluate_func(math.factorial),
+            'sin': lambda: self.evaluate_func(math.sin),
+            'cos': lambda: self.evaluate_func(math.cos),
+            'tan': lambda: self.evaluate_func(math.tan),
+            '10^': lambda: self.evaluate_func(lambda x: 10 ** x),
+            'sinh': lambda: self.evaluate_func(math.sinh),
+            'cosh': lambda: self.evaluate_func(math.cosh),
+            'tanh': lambda: self.evaluate_func(math.tanh),
+            '1/x': lambda: self.evaluate_func(lambda x: 1 / x),
+            'ln': lambda: self.evaluate_func(math.log),
+            'log2': lambda: self.evaluate_func(math.log2),
+            'log10': lambda: self.evaluate_func(math.log10),
+            'Abs': lambda: self.evaluate_func(abs),
+            'CE': self.clear,
+            '=': self.calculate
+        }
+
+        # Create and place the buttons
+        for r, row in enumerate(buttons):
+            for c, char in enumerate(row):
+                if char == "":
+                    continue
+
+                # Determine button color based on its type
+                if char in ['CE']:
+                    color = btn_colors['clear']
+                elif char == '=':
+                    color = btn_colors['equals']
+                elif char in ['+', '-', '*', '/', 'Exp', 'x^', '=', 'sin', 'cos', 'tan', 'log2', 'log10']:
+                    color = btn_colors['operator']
+                elif char in ['π', 'e', 'Deg', 'Rad', 'x²', 'x!', 'sinh', 'cosh', 'tanh', '1/x', 'ln', 'Abs']:
+                    color = btn_colors['scientific']
+                else:
+                    color = btn_colors['numeric']
+
+                # Create the button with the selected color
+                btn = tk.Button(btns_frame, text=char, fg="black", width=6, height=2,
+                                font=('arial', 12, 'bold'), bd=1, bg=color,
+                                command=cmd_map.get(char, lambda ch=char: self.append_text(ch)))
+                btn.grid(row=r, column=c, padx=1, pady=1)
+
+    def append_text(self, value):
+        self.expression += str(value)
+        self.input_text.set(self.expression)
+
+    def clear(self):
+        self.expression = ""
+        self.input_text.set("")
+
+    def calculate(self):
+        try:
+            result = eval(self.expression)
+            self.input_text.set(result)
+            self.expression = str(result)
+        except:
+            self.input_text.set("Error")
+            self.expression = ""
+
+    def evaluate_func(self, func):
+        try:
+            result = func(float(eval(self.expression)))
+            self.input_text.set(result)
+            self.expression = str(result)
+        except:
+            self.input_text.set("Error")
+            self.expression = ""
+
+# Run the calculator
+root = tk.Tk()
+calc = ScientificCalculator(root)
+root.mainloop()
