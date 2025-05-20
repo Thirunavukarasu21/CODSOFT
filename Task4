@@ -1,102 +1,99 @@
 import tkinter as tk
+import random
 from tkinter import messagebox
-from datetime import datetime
-import pytz
 
-# Hardcoded weather data for major Indian cities
-weather_db = {
-    "chennai": {"temp": 34, "feels_like": 37, "condition": "Sunny", "wind_speed": 5, "humidity": 65, "pressure": 1006, "visibility": 6, "lon": 80.2785, "lat": 13.0878},
-    "mumbai": {"temp": 32, "feels_like": 36, "condition": "Cloudy", "wind_speed": 4.2, "humidity": 70, "pressure": 1004, "visibility": 5, "lon": 72.8777, "lat": 19.0760},
-    "delhi": {"temp": 38, "feels_like": 40, "condition": "Hot", "wind_speed": 3.8, "humidity": 60, "pressure": 1001, "visibility": 4, "lon": 77.2090, "lat": 28.6139},
-    "kolkata": {"temp": 31, "feels_like": 33, "condition": "Haze", "wind_speed": 3.1, "humidity": 75, "pressure": 1002, "visibility": 6, "lon": 88.3639, "lat": 22.5726},
-    "bengaluru": {"temp": 28, "feels_like": 29, "condition": "Partly Cloudy", "wind_speed": 5.1, "humidity": 55, "pressure": 1008, "visibility": 6, "lon": 77.5946, "lat": 12.9716},
-    "hyderabad": {"temp": 35, "feels_like": 37, "condition": "Sunny", "wind_speed": 4.5, "humidity": 52, "pressure": 1005, "visibility": 5, "lon": 78.4867, "lat": 17.3850},
-    "ahmedabad": {"temp": 39, "feels_like": 42, "condition": "Hot", "wind_speed": 3.2, "humidity": 40, "pressure": 1000, "visibility": 4, "lon": 72.5714, "lat": 23.0225},
-    "jaipur": {"temp": 37, "feels_like": 39, "condition": "Sunny", "wind_speed": 2.9, "humidity": 45, "pressure": 1002, "visibility": 5, "lon": 75.7873, "lat": 26.9124}
-}
-
-# Weather symbols (use your own icons with the same file names)
-weather_icons = {
-    "Sunny": "sunny.png",
-    "Cloudy": "cloudy.png",
-    "Hot": "hot.png",
-    "Haze": "haze.png",
-    "Partly Cloudy": "partly_cloudy.png"
-}
-
-def update_weather():
-    city = city_entry.get().strip().lower()
-    data = weather_db.get(city)
-    if data:
-        city_label.config(text=city.title())
-        temp_label.config(text=f"{data['temp']} °C")
-        condition_label.config(text=f"{data['condition']} | FEELS LIKE {data['feels_like']} °C")
-        coord_label.config(text=f"Lon : {data['lon']}\nLat : {data['lat']}")
-        current_time = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%I:%M %p")
-        time_label.config(text=f"Time: {current_time}")
-        
-        # Load the corresponding weather icon
-        condition = data['condition']
-        try:
-            weather_icon = tk.PhotoImage(file=weather_icons[condition])
-            icon_label.config(image=weather_icon)
-            icon_label.image = weather_icon  # Keep reference to prevent garbage collection
-        except KeyError:
-            icon_label.config(image="")
-            icon_label.image = None  # No icon available for this condition
-        
-        values = [
-            f"{data['wind_speed']} m/s",
-            f"{data['humidity']} %",
-            data['condition'],
-            f"{data['pressure']} hPa",
-            f"{data['visibility']} KM"
-        ]
-        for i in range(5):
-            data_labels[i].config(text=values[i])
-    else:
-        messagebox.showerror("Invalid City", f"'{city}' is not available.\nPlease enter a valid Indian city like Chennai, Mumbai, Delhi, etc.")
-
-# GUI Setup
+# Main window setup
 root = tk.Tk()
-root.title("Offline Weather App - India")
-root.geometry("700x400")
-root.configure(bg='#2E3B4E')  # Darker background color
+root.title("Rock-Paper-Scissors Game")
+root.geometry("500x400")
+root.config(bg="#2E3B4E")
 
-city_entry = tk.Entry(root, font=('Arial', 16), justify='center', bg='#B6D0E2', fg='black')
-city_entry.pack(pady=10)
-city_entry.bind("<Return>", lambda event: update_weather())
+# Global variables
+player_score = 0
+computer_score = 0
+is_two_player = False
+player1_choice = ""
 
-tk.Label(root, text="WEATHER IN", font=('Arial', 18, 'bold'), bg='#2E3B4E', fg='white').pack()
-city_label = tk.Label(root, text="", font=('Arial', 24, 'bold'), bg='#2E3B4E', fg='white')
-city_label.pack()
-temp_label = tk.Label(root, text="", font=('Arial', 40, 'bold'), bg='#2E3B4E', fg='#00e0ff')
-temp_label.pack()
-condition_label = tk.Label(root, text="", font=('Arial', 14), bg='#2E3B4E', fg='white')
-condition_label.pack()
+# Function to decide the winner
+def get_winner(p1, p2):
+    if p1 == p2:
+        return "Draw"
+    elif (p1 == "Rock" and p2 == "Scissors") or \
+         (p1 == "Scissors" and p2 == "Paper") or \
+         (p1 == "Paper" and p2 == "Rock"):
+        return "Player 1"
+    else:
+        return "Player 2"
 
-# Weather icon label
-icon_label = tk.Label(root, bg='#2E3B4E')
-icon_label.pack(pady=10)
+# Function to play a round
+def play(choice):
+    global player_score, computer_score, player1_choice
 
-coord_label = tk.Label(root, text="", font=('Arial', 10), bg='#2E3B4E', fg='orange')
-coord_label.place(x=550, y=60)
-time_label = tk.Label(root, text="", font=('Arial', 14), bg='#2E3B4E', fg='orange')
-time_label.place(x=550, y=10)
+    if is_two_player:
+        if player1_choice == "":
+            player1_choice = choice
+            result_label.config(text="Player 1 has chosen. Waiting for Player 2.")
+        else:
+            p1 = player1_choice
+            p2 = choice
+            winner = get_winner(p1, p2)
+            if winner == "Draw":
+                result_label.config(text="It's a draw!")
+            elif winner == "Player 1":
+                player_score += 1
+                result_label.config(text="Player 1 wins this round!")
+            else:
+                computer_score += 1
+                result_label.config(text="Player 2 wins this round!")
+            score_label.config(text=f"P1: {player_score}  |  P2: {computer_score}")
+            player1_choice = ""
+    else:
+        p1 = choice
+        p2 = random.choice(["Rock", "Paper", "Scissors"])
+        winner = get_winner(p1, p2)
+        if winner == "Draw":
+            result_label.config(text=f"Computer chose {p2}. It's a draw!")
+        elif winner == "Player 1":
+            player_score += 1
+            result_label.config(text=f"Computer chose {p2}. You win!")
+        else:
+            computer_score += 1
+            result_label.config(text=f"Computer chose {p2}. You lose!")
+        score_label.config(text=f"You: {player_score}  |  Computer: {computer_score}")
 
-bottom_frame = tk.Frame(root, bg='#000814', height=100)
-bottom_frame.pack(fill='x', side='bottom')
-headers = ["WIND SPEED", "HUMIDITY", "WEATHER INFO", "PRESSURE", "VISIBILITY"]
-for i, head in enumerate(headers):
-    tk.Label(bottom_frame, text=head, font=('Arial', 10), fg='lime', bg='#000814').place(x=20 + i * 130, y=10)
-data_labels = []
-for i in range(5):
-    lbl = tk.Label(bottom_frame, text="", font=('Arial', 12), fg='white', bg='#000814')
-    lbl.place(x=20 + i * 130, y=40)
-    data_labels.append(lbl)
+# Toggle between 1-player and 2-player mode
+def toggle_mode():
+    global is_two_player, player_score, computer_score, player1_choice
+    is_two_player = not is_two_player
+    player_score = 0
+    computer_score = 0
+    player1_choice = ""
+    mode = "2 Player Mode" if is_two_player else "Single Player Mode"
+    mode_button.config(text=mode)
+    result_label.config(text="Choose your move.")
+    score_label.config(text="P1: 0  |  P2: 0" if is_two_player else "You: 0  |  Computer: 0")
 
-# Updated name here
-tk.Label(bottom_frame, text="AKTHIRU", font=('Arial', 8), fg='skyblue', bg='#000814')\
-    .place(relx=0.5, rely=1.0, anchor='s')
+# UI Elements
+tk.Label(root, text="Rock-Paper-Scissors", font=("Arial", 20, "bold"), bg="#2E3B4E", fg="white").pack(pady=10)
 
+result_label = tk.Label(root, text="Choose your move.", font=("Arial", 14), bg="#2E3B4E", fg="skyblue")
+result_label.pack(pady=10)
+
+score_label = tk.Label(root, text="You: 0  |  Computer: 0", font=("Arial", 12), bg="#2E3B4E", fg="orange")
+score_label.pack(pady=10)
+
+btn_frame = tk.Frame(root, bg="#2E3B4E")
+btn_frame.pack(pady=20)
+
+for option in ["Rock", "Paper", "Scissors"]:
+    tk.Button(btn_frame, text=option, width=10, font=("Arial", 12), command=lambda opt=option: play(opt)).pack(side="left", padx=10)
+
+mode_button = tk.Button(root, text="Single Player Mode", font=("Arial", 10), bg="gray", fg="white", command=toggle_mode)
+mode_button.pack(pady=10)
+
+# Footer
+tk.Label(root, text="AKTHIRU", font=("Arial", 8), bg="#2E3B4E", fg="lightblue").pack(side="bottom", pady=10)
+
+# Run the game loop
 root.mainloop()
+
