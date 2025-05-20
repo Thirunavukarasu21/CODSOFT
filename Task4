@@ -1,0 +1,102 @@
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
+import pytz
+
+# Hardcoded weather data for major Indian cities
+weather_db = {
+    "chennai": {"temp": 34, "feels_like": 37, "condition": "Sunny", "wind_speed": 5, "humidity": 65, "pressure": 1006, "visibility": 6, "lon": 80.2785, "lat": 13.0878},
+    "mumbai": {"temp": 32, "feels_like": 36, "condition": "Cloudy", "wind_speed": 4.2, "humidity": 70, "pressure": 1004, "visibility": 5, "lon": 72.8777, "lat": 19.0760},
+    "delhi": {"temp": 38, "feels_like": 40, "condition": "Hot", "wind_speed": 3.8, "humidity": 60, "pressure": 1001, "visibility": 4, "lon": 77.2090, "lat": 28.6139},
+    "kolkata": {"temp": 31, "feels_like": 33, "condition": "Haze", "wind_speed": 3.1, "humidity": 75, "pressure": 1002, "visibility": 6, "lon": 88.3639, "lat": 22.5726},
+    "bengaluru": {"temp": 28, "feels_like": 29, "condition": "Partly Cloudy", "wind_speed": 5.1, "humidity": 55, "pressure": 1008, "visibility": 6, "lon": 77.5946, "lat": 12.9716},
+    "hyderabad": {"temp": 35, "feels_like": 37, "condition": "Sunny", "wind_speed": 4.5, "humidity": 52, "pressure": 1005, "visibility": 5, "lon": 78.4867, "lat": 17.3850},
+    "ahmedabad": {"temp": 39, "feels_like": 42, "condition": "Hot", "wind_speed": 3.2, "humidity": 40, "pressure": 1000, "visibility": 4, "lon": 72.5714, "lat": 23.0225},
+    "jaipur": {"temp": 37, "feels_like": 39, "condition": "Sunny", "wind_speed": 2.9, "humidity": 45, "pressure": 1002, "visibility": 5, "lon": 75.7873, "lat": 26.9124}
+}
+
+# Weather symbols (use your own icons with the same file names)
+weather_icons = {
+    "Sunny": "sunny.png",
+    "Cloudy": "cloudy.png",
+    "Hot": "hot.png",
+    "Haze": "haze.png",
+    "Partly Cloudy": "partly_cloudy.png"
+}
+
+def update_weather():
+    city = city_entry.get().strip().lower()
+    data = weather_db.get(city)
+    if data:
+        city_label.config(text=city.title())
+        temp_label.config(text=f"{data['temp']} °C")
+        condition_label.config(text=f"{data['condition']} | FEELS LIKE {data['feels_like']} °C")
+        coord_label.config(text=f"Lon : {data['lon']}\nLat : {data['lat']}")
+        current_time = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%I:%M %p")
+        time_label.config(text=f"Time: {current_time}")
+        
+        # Load the corresponding weather icon
+        condition = data['condition']
+        try:
+            weather_icon = tk.PhotoImage(file=weather_icons[condition])
+            icon_label.config(image=weather_icon)
+            icon_label.image = weather_icon  # Keep reference to prevent garbage collection
+        except KeyError:
+            icon_label.config(image="")
+            icon_label.image = None  # No icon available for this condition
+        
+        values = [
+            f"{data['wind_speed']} m/s",
+            f"{data['humidity']} %",
+            data['condition'],
+            f"{data['pressure']} hPa",
+            f"{data['visibility']} KM"
+        ]
+        for i in range(5):
+            data_labels[i].config(text=values[i])
+    else:
+        messagebox.showerror("Invalid City", f"'{city}' is not available.\nPlease enter a valid Indian city like Chennai, Mumbai, Delhi, etc.")
+
+# GUI Setup
+root = tk.Tk()
+root.title("Offline Weather App - India")
+root.geometry("700x400")
+root.configure(bg='#2E3B4E')  # Darker background color
+
+city_entry = tk.Entry(root, font=('Arial', 16), justify='center', bg='#B6D0E2', fg='black')
+city_entry.pack(pady=10)
+city_entry.bind("<Return>", lambda event: update_weather())
+
+tk.Label(root, text="WEATHER IN", font=('Arial', 18, 'bold'), bg='#2E3B4E', fg='white').pack()
+city_label = tk.Label(root, text="", font=('Arial', 24, 'bold'), bg='#2E3B4E', fg='white')
+city_label.pack()
+temp_label = tk.Label(root, text="", font=('Arial', 40, 'bold'), bg='#2E3B4E', fg='#00e0ff')
+temp_label.pack()
+condition_label = tk.Label(root, text="", font=('Arial', 14), bg='#2E3B4E', fg='white')
+condition_label.pack()
+
+# Weather icon label
+icon_label = tk.Label(root, bg='#2E3B4E')
+icon_label.pack(pady=10)
+
+coord_label = tk.Label(root, text="", font=('Arial', 10), bg='#2E3B4E', fg='orange')
+coord_label.place(x=550, y=60)
+time_label = tk.Label(root, text="", font=('Arial', 14), bg='#2E3B4E', fg='orange')
+time_label.place(x=550, y=10)
+
+bottom_frame = tk.Frame(root, bg='#000814', height=100)
+bottom_frame.pack(fill='x', side='bottom')
+headers = ["WIND SPEED", "HUMIDITY", "WEATHER INFO", "PRESSURE", "VISIBILITY"]
+for i, head in enumerate(headers):
+    tk.Label(bottom_frame, text=head, font=('Arial', 10), fg='lime', bg='#000814').place(x=20 + i * 130, y=10)
+data_labels = []
+for i in range(5):
+    lbl = tk.Label(bottom_frame, text="", font=('Arial', 12), fg='white', bg='#000814')
+    lbl.place(x=20 + i * 130, y=40)
+    data_labels.append(lbl)
+
+# Updated name here
+tk.Label(bottom_frame, text="AKTHIRU", font=('Arial', 8), fg='skyblue', bg='#000814')\
+    .place(relx=0.5, rely=1.0, anchor='s')
+
+root.mainloop()
